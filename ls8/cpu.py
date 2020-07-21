@@ -7,7 +7,22 @@ class CPU:
 
     def __init__(self):
         """Construct a new CPU."""
-        pass
+        self.reg = [0] * 8
+        self.ram = [0] * 256
+        self.reg[7] = 0xF4
+        self.sp = self.reg[7]
+        self.pc = 0
+    
+    def ram_read(self):
+        ram_index = self.ram[self.pc + 1]
+        self.pc += 2
+        return self.ram[ram_index]
+
+    def ram_write(self):
+        where_save = self.ram[self.pc + 1]
+        what_save = self.ram[self.pc + 2]
+        self.ram[where_save] = what_save
+        self.pc += 3
 
     def load(self):
         """Load a program into memory."""
@@ -60,6 +75,12 @@ class CPU:
 
         print()
 
+    #table of defintions for instructions
+    LDI = 0b10000010
+    PRN = 0b01000111
+    HLT = 0b00000001
+
     def run(self):
         """Run the CPU."""
+        command = self.ram[self.pc]
         pass
