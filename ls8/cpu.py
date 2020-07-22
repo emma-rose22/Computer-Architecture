@@ -101,6 +101,8 @@ class CPU:
         PRN = 0b01000111
         HLT = 0b00000001
         MUL = 0b10100010
+        POP = 0b01000110
+        PUSH = 0b01000101
         running = True
         while running == True:
     
@@ -110,7 +112,7 @@ class CPU:
                 #stop
                 running = False
             if command == LDI:
-                #save value
+                #save value in register
                 #will have to move the counter to the register wanted
                 #and then move it to the integer to be saved
                 reg = self.ram[self.pc + 1] 
@@ -134,3 +136,28 @@ class CPU:
                 reg_2 = self.ram[self.pc + 2]
                 self.alu("MUL", reg_1, reg_2)
                 self.pc += 3
+
+            if command == PUSH:
+                #save value in ram
+                #decrement stack pointer to get to where we want to push to
+                self.sp -= 1
+                #get register number from memory 
+                #get value from register number
+                value = self.reg[self.ram[self.pc + 1]]
+                #at the stack pointer value in memory, insert the value
+                self.ram[self.sp] = value
+                #increment the program counter
+                self.pc += 2
+
+            if command == POP:
+                #remove and return value from ram into register
+                #get the register number from memory
+                reg = self.ram[self.pc + 1]
+                #uses stack pointer to get value from memory
+                value = self.ram[self.sp]
+                #put that value into the register at reg number
+                self.reg[reg] = value
+                #increment the stack pointer
+                self.sp += 1
+                #increment program counter
+                self.pc += 2
