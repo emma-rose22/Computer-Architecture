@@ -1,5 +1,4 @@
 """CPU functionality."""
-
 import sys
 
 class CPU:
@@ -24,26 +23,41 @@ class CPU:
         self.ram[where_save] = what_save
         self.pc += 3
 
+
     def load(self):
         """Load a program into memory."""
+        try:
+            #our pointer
+            address = 0
 
-        address = 0
+            #if I forgot to pass in a file name len(sys) == 1
+            if len(sys.argv) < 2:
+                print('Please pass in a second file name to use')
+            file_name = sys.argv[1]
 
-        # For now, we've just hardcoded a program:
+            #so I don't have to cd into example
+            file_name = 'examples/' + file_name
 
-        program = [
-            # From print8.ls8
-            0b10000010, # LDI R0,8
-            0b00000000,
-            0b00001000,
-            0b01000111, # PRN R0
-            0b00000000,
-            0b00000001, # HLT
-        ]
-
-        for instruction in program:
-            self.ram[address] = instruction
-            address += 1
+            #auto closes file
+            with open(file_name) as file:
+                for line in file:
+                    # split input away from notes
+                    split_line = line.split('#')
+                    #get whats before the notes and strip away new line characters
+                    command = split_line[0].strip()
+                    #skip over white space
+                    if command == '':
+                        continue 
+                    
+                    #convert from binary string to int
+                    num = int(command, 2)
+                    #actually inserting the instruction into the ram 
+                    self.ram[address] = num
+                    #increment the pointer
+                    address += 1
+        #not a real file
+        except FileNotFoundError:
+            print(f'{sys.argv[1]} file was not found.')
 
 
     def alu(self, op, reg_a, reg_b):
@@ -52,6 +66,11 @@ class CPU:
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
         #elif op == "SUB": etc
+
+        if op == "MUL":
+
+            multiplied = self.reg[reg_a] * self.reg[reg_b]
+            self.reg[reg_a] = multiplied
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -75,12 +94,43 @@ class CPU:
 
         print()
 
-    #table of defintions for instructions
-    LDI = 0b10000010
-    PRN = 0b01000111
-    HLT = 0b00000001
-
     def run(self):
         """Run the CPU."""
-        command = self.ram[self.pc]
-        pass
+        #table of names for the commands
+        LDI = 0b10000010
+        PRN = 0b01000111
+        HLT = 0b00000001
+        MUL = 0b10100010
+        running = True
+        while running == True:
+    
+            command = self.ram[self.pc]
+            
+            if command == HLT:
+                #stop
+                running = False
+            if command == LDI:
+                #save value
+                #will have to move the counter to the register wanted
+                #and then move it to the integer to be saved
+                reg = self.ram[self.pc + 1] 
+                integer = self.ram[self.pc + 2]
+                self.reg[reg] = integer
+                self.pc += 3
+
+            if command == PRN:
+                #print function
+                #move the counter to go to the register
+                #then print what is at that register
+                reg = self.ram[self.pc + 1]
+                print(self.reg[reg])
+                self.pc += 2
+
+            if command == MUL:
+                #multiplication function
+                #the actual work will be implemented in the alu function
+                #so here I just need to get the two addresses to be multiplied
+                reg_1 = self.ram[self.pc + 1]
+                reg_2 = self.ram[self.pc + 2]
+                self.alu("MUL", reg_1, reg_2)
+                self.pc += 3
