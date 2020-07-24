@@ -7,6 +7,9 @@ class CPU:
     def __init__(self):
         """Construct a new CPU."""
         self.reg = [0] * 8
+        #FL bits: 00000LGE
+        #less than, greater than, equal
+        self.fl  = [0] * 8 
         self.ram = [0] * 256
         self.reg[7] = 0xF4
         self.sp = self.reg[7]
@@ -107,6 +110,10 @@ class CPU:
         POP = 0b01000110
         RET = 0b00010001
         ADD = 0b10100000
+        CMP = 0b10100111
+        JMP = 0b01010100
+        JEQ = 0b01010101
+        JNE = 0b01010110
         PUSH = 0b01000101
         CALL = 0b01010000
 
@@ -122,7 +129,7 @@ class CPU:
                 #save value in register
                 #will have to move the counter to the register wanted
                 #and then move it to the integer to be saved
-                reg = self.ram[self.pc + 1] 
+                reg = self.ram[self.pc + 1]
                 integer = self.ram[self.pc + 2]
                 self.reg[reg] = integer
                 self.pc += 3
@@ -176,6 +183,7 @@ class CPU:
                 self.pc += 2
 
             if command == CALL:
+                #go to different address to run function
                 #get register address is stored at 
                 reg = self.ram[self.pc + 1]
                 #get the address from the register
@@ -191,6 +199,7 @@ class CPU:
                 self.pc = address
 
             if command == RET:
+                #return to spot in ram
                 #pop off the stack our return address
                 return_address = self.ram[self.sp]
                 #increment the stack pointer since we popped off
@@ -198,3 +207,62 @@ class CPU:
                 #set the program counter to the return address,
                 #sending the program back on its way
                 self.pc = return_address
+
+            if command == CMP:
+                #compare value in two registers and change flag accordingly
+                #increment to get first register address
+                #increment by 2 to get the second address
+
+                reg_1_address = self.ram[self.pc + 1]
+                reg_2_address = self.ram[self.pc + 2]
+                reg_1 = self.reg[reg_1_address]
+                reg_2 = self.reg[reg_2_address]
+
+                #find out if less, greater, or equal
+                if reg_1 == reg_2:
+                    self.fl[-1] = 1
+                if reg_1 != reg_2:
+                    self.fl[-1] = 0
+
+                if reg_1 > reg_2:
+                    self.fl[-2] = 1
+                if reg_1 > reg_2 == False:
+                    self.fl[-2] = 0
+           
+                if reg_1 < reg_2:
+                    self.fl[-3] = 1
+                if reg_1 < reg_2 == False:
+                    self.fl[-3] = 0
+
+ 
+                # change the appropriate flag in the fl register
+                #increment
+                self.pc += 3
+
+            if command == JMP:
+                #jump to an address in register
+                #go get the address
+                #set the pc equal to that 
+                address = self.ram[self.pc + 1]
+                address_value = self.reg[address]
+                self.pc = address_value
+
+            if command == JEQ:
+                address = self.ram[self.pc + 1]
+                #if equal flag is true, jump to given address
+                if self.fl[-1] == 1:
+                    address = self.ram[self.pc + 1]
+                    address_value = self.reg[address]
+                    self.pc = address_value
+                else:
+                    self.pc += 2
+
+            if command == JNE:
+                #if equal flag is false, jump to given address
+                if self.fl[-1] == 0:
+                    address = self.ram[self.pc + 1]
+                    address_value = self.reg[address]
+                    self.pc = address_value
+                else:
+                    self.pc += 2
+                
