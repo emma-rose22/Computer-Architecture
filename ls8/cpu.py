@@ -62,17 +62,20 @@ class CPU:
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
+        # print('op', op)
+        # print("ADD")
 
         if op == "ADD":
-            self.reg[reg_a] += self.reg[reg_b]
-        #elif op == "SUB": etc
+            #self.reg[reg_a] += self.reg[reg_b]
+            added = self.reg[reg_a] + self.reg[reg_b]
+            self.reg[reg_a] = added
 
         if op == "MUL":
-
             multiplied = self.reg[reg_a] * self.reg[reg_b]
             self.reg[reg_a] = multiplied
         else:
-            raise Exception("Unsupported ALU operation")
+            # raise Exception("Unsupported ALU operation")
+            pass
 
     def trace(self):
         """
@@ -102,7 +105,11 @@ class CPU:
         HLT = 0b00000001
         MUL = 0b10100010
         POP = 0b01000110
+        RET = 0b00010001
+        ADD = 0b10100000
         PUSH = 0b01000101
+        CALL = 0b01010000
+
         running = True
         while running == True:
     
@@ -137,6 +144,12 @@ class CPU:
                 self.alu("MUL", reg_1, reg_2)
                 self.pc += 3
 
+            if command == ADD:
+                reg_1 = self.ram[self.pc + 1]
+                reg_2 = self.ram[self.pc + 2]
+                self.alu("ADD", reg_1, reg_2)
+                self.pc += 3
+
             if command == PUSH:
                 #save value in ram
                 #decrement stack pointer to get to where we want to push to
@@ -161,3 +174,27 @@ class CPU:
                 self.sp += 1
                 #increment program counter
                 self.pc += 2
+
+            if command == CALL:
+                #get register address is stored at 
+                reg = self.ram[self.pc + 1]
+                #get the address from the register
+                address = self.reg[reg]
+                #get the address to return to
+                return_address= self.pc+2
+                #decrement the stack pointer so we can save return address
+                self.sp -= 1
+                #save return address
+                self.ram[self.sp] = return_address
+                #now we can set the program counter to the address of 
+                #the function we are trying to call
+                self.pc = address
+
+            if command == RET:
+                #pop off the stack our return address
+                return_address = self.ram[self.sp]
+                #increment the stack pointer since we popped off
+                self.sp += 1
+                #set the program counter to the return address,
+                #sending the program back on its way
+                self.pc = return_address
